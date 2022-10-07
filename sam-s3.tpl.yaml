@@ -1,0 +1,43 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: AWS Serverless Quarkus HTTP - piggybank-1.0.0-SNAPSHOT
+Globals:
+  Api:
+    EndpointConfiguration: REGIONAL
+    BinaryMediaTypes:
+      - "*/*"
+
+Resources:
+  IngestBucket:
+    Type: AWS::S3::Bucket
+
+  S3IngestFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: io.quarkus.amazon.lambda.runtime.QuarkusStreamHandler::handleRequest
+      Runtime: java11
+      CodeUri: piggybank-ingest/target/function.zip
+      MemorySize: 512
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - AmazonS3ReadOnlyAccess
+      Timeout: 15
+      Events:
+        S3Event:
+          Type: S3
+          Properties:
+            Bucket: !Ref IngestBucket
+            Events:
+              - 's3:ObjectCreated:*'
+      VpcConfig:
+          SecurityGroupIds:
+              - $SECGRP
+          SubnetIds:
+              - $SUBNET0
+              - $SUBNET1
+              - $SUBNET2
+
+Outputs:
+  IngestBucketURL:
+    Description: S3  ingest bucket
+    Value: !Ref IngestBucket

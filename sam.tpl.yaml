@@ -1,0 +1,43 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: AWS Serverless Quarkus HTTP - piggybank-1.0.0-SNAPSHOT
+Globals:
+  Api:
+    EndpointConfiguration: REGIONAL
+    BinaryMediaTypes:
+      - "*/*"
+
+Resources:
+  Piggybank:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: io.quarkus.amazon.lambda.runtime.QuarkusStreamHandler::handleRequest
+      Runtime: java11
+      CodeUri: piggybank/target/function.zip
+      MemorySize: 512
+      Policies: AWSLambdaBasicExecutionRole
+      Timeout: 15
+      Events:
+        HttpApiEvent:
+            Type: HttpApi
+      VpcConfig:
+          SecurityGroupIds:
+              - $SECGRP
+          SubnetIds:
+              - $SUBNET0
+              - $SUBNET1
+              - $SUBNET2
+
+Outputs:
+  PiggybankApi:
+    Description: URL for application
+    Value:
+      Fn::Join:
+        - ''
+        - - 'https://'
+          - Ref: 'ServerlessHttpApi'
+          - '.execute-api.'
+          - Ref: 'AWS::Region'
+          - '.amazonaws.com/'
+    Export:
+      Name: PiggybankApi

@@ -1,0 +1,309 @@
+# aws cloudformation create-stack --stack-name "build-stack" --template-body file://codebuild.template.yaml --capabilities CAPABILITY_IAM
+# aws cloudformation deploy --stack-name "build-stack" --template-file codebuild.template.yaml --capabilities CAPABILITY_IAM
+Description: CodeBuild project for piggybank
+
+Parameters:
+  VpcCIDR:
+    Description: IP range for this VPC
+    Type: String
+    Default: 10.192.0.0/16
+
+  PublicSubnet0CIDR:
+    Description: IP range for the public subnet in the first Availability Zone
+    Type: String
+    Default: 10.192.100.0/24
+
+  PublicSubnet1CIDR:
+    Description: IP range for the public subnet in the first Availability Zone
+    Type: String
+    Default: 10.192.101.0/24
+
+  PublicSubnet2CIDR:
+    Description: IP range for the public subnet in the second Availability Zone
+    Type: String
+    Default: 10.192.102.0/24
+
+  PrivateSubnet0CIDR:
+    Description: IP range for the private subnet in the first Availability Zone
+    Type: String
+    Default: 10.192.20.0/24
+
+  PrivateSubnet1CIDR:
+    Description: IP range for the private subnet in the first Availability Zone
+    Type: String
+    Default: 10.192.21.0/24
+
+  PrivateSubnet2CIDR:
+    Description: IP range for the private subnet in the second Availability Zone
+    Type: String
+    Default: 10.192.22.0/24
+
+Resources:
+  # Storage
+  ArtifactsBucket:
+    Type: 'AWS::S3::Bucket'
+
+  # Networking
+  # Network
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VpcCIDR
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}/VPC"
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}/IGW"
+
+  InternetGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId: !Ref InternetGateway
+      VpcId: !Ref VPC
+
+  PublicSubnet0:
+    Type: AWS::EC2::Subnet
+    DeletionPolicy: Delete
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [ 0, !GetAZs  '' ]
+      CidrBlock: !Ref PublicSubnet0CIDR
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}/PublicSubnet0"
+
+  PublicSubnet1:
+    Type: AWS::EC2::Subnet
+    DeletionPolicy: Delete
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [ 1, !GetAZs '' ]
+      CidrBlock: !Ref PublicSubnet1CIDR
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}/PublicSubnet1"
+
+  PublicSubnet2:
+    Type: AWS::EC2::Subnet
+    DeletionPolicy: Delete
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [ 2, !GetAZs  '' ]
+      CidrBlock: !Ref PublicSubnet2CIDR
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}/PublicSubnet2"
+
+  PrivateSubnet0:
+    Type: AWS::EC2::Subnet
+    DeletionPolicy: Delete
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [ 0, !GetAZs  '' ]
+      CidrBlock: !Ref PrivateSubnet0CIDR
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}/PrivateSubnet0'
+
+
+  PrivateSubnet1:
+    Type: AWS::EC2::Subnet
+    DeletionPolicy: Delete
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [ 1, !GetAZs  '' ]
+      CidrBlock: !Ref PrivateSubnet1CIDR
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}/PrivateSubnet1'
+
+  PrivateSubnet2:
+    Type: AWS::EC2::Subnet
+    DeletionPolicy: Delete
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [ 2, !GetAZs  '' ]
+      CidrBlock: !Ref PrivateSubnet2CIDR
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}/PrivateSubnet2'
+
+  NatGateway0EIP:
+    Type: AWS::EC2::EIP
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      Domain: vpc
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}/NATIP0'
+
+  NatGateway1EIP:
+    Type: AWS::EC2::EIP
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      Domain: vpc
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}/NATIP1'
+
+  NatGateway2EIP:
+    Type: AWS::EC2::EIP
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      Domain: vpc
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}/NATIP2'
+
+  NatGateway0:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt NatGateway0EIP.AllocationId
+      SubnetId: !Ref PublicSubnet0
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}/NAT0'
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}/PublicRouteTable'
+
+  DefaultPublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  PublicSubnet0RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnet0
+
+  PrivateRouteTable0:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}/PrivateRouteTable0'
+
+  DefaultPrivateRoute0:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable0
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGateway0
+
+  PrivateSubnet0RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable0
+      SubnetId: !Ref PrivateSubnet0
+
+  # Build
+  CodeBuildProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      ServiceRole: !GetAtt CodeBuildRole.Arn
+      Artifacts:
+        Type: NO_ARTIFACTS
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: "aws/codebuild/amazonlinux2-x86_64-standard:4.0"
+        EnvironmentVariables:
+          - Name: QUARKUS_PROFILE
+            Value: prod
+            Type: PLAINTEXT
+          - Name: ARTIFACTS_S3_BUCKET
+            Value: !Ref ArtifactsBucket
+            Type: PLAINTEXT
+      Source:
+        Type: GITHUB
+        Location: "https://github.com/CaravanaCloud/aws-pod"
+      TimeoutInMinutes: 15
+      VpcConfig:
+        VpcId: !Ref VPC
+        Subnets:
+          - !Ref PublicSubnet0
+          - !Ref PublicSubnet1
+          - !Ref PublicSubnet2
+        SecurityGroupIds: [!Ref CodeBuildSecurityGroup]
+      Cache:
+        Type: S3
+        Location: !Sub "${ArtifactsBucket}/cache"
+
+  CodeBuildRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: ['sts:AssumeRole']
+            Effect: Allow
+            Principal:
+              Service: [codebuild.amazonaws.com]
+        Version: '2012-10-17'
+      Path: /
+      Policies:
+        - PolicyName: CodeBuildAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Action:
+                  - 'logs:*'
+                  - 'ec2:CreateNetworkInterface'
+                  - 'ec2:DescribeNetworkInterfaces'
+                  - 'ec2:DeleteNetworkInterface'
+                  - 'ec2:DescribeSubnets'
+                  - 'ec2:DescribeSecurityGroups'
+                  - 'ec2:DescribeDhcpOptions'
+                  - 'ec2:DescribeVpcs'
+                  - 'ec2:CreateNetworkInterfacePermission'
+                Effect: Allow
+                Resource: '*'
+  CodeBuildVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: 'true'
+      EnableDnsHostnames: 'true'
+      Tags:
+        - Key: name
+          Value: codebuild
+  CodeBuildSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId:
+        Ref: CodeBuildVPC
+      CidrBlock: 10.0.1.0/24
+  CodeBuildSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: Codebuild Internet Group
+      GroupDescription: 'CodeBuild SecurityGroup'
+      VpcId: !Ref VPC
+
+Outputs:
+  CodeBuildProjectRef:
+    Description: Code Build Project
+    Value: !Ref CodeBuildProject

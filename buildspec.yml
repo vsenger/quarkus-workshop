@@ -1,0 +1,57 @@
+version: 0.2
+
+env:
+  variables:
+    QUARKUS_PROFILE: "prod"
+    MVN_XOPTS: "-B -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
+
+phases:
+  install:
+    commands:
+      - echo Install SDK and tools
+      - curl -s "https://get.sdkman.io" | bash
+      - source "/root/.sdkman/bin/sdkman-init.sh" && sdk install java 11.0.16-amzn && sdk install maven
+      - npm install -g aws-cdk
+      - sam --version
+#    finally:
+#      - echo This always runs even if the update or install command fails 
+  pre_build:
+    commands:
+      - echo Login before build
+#      - docker login -u User -p $LOGIN_PASSWORD
+  build:
+    commands:
+      - echo Build the packages
+  post_build:
+    commands:
+      - echo "post-build [$PWD]" && find .
+
+#reports:
+#  arn:aws:codebuild:your-region:your-aws-account-id:report-group/report-group-name-1:
+#    files:
+#      - "**/*"
+#    base-directory: 'target/tests/reports'
+#    discard-paths: no
+#  reportGroupCucumberJson:
+#    files:
+#      - 'cucumber/target/cucumber-tests.xml'
+#    discard-paths: yes
+#    file-format: CUCUMBERJSON # default is JUNITXML
+#artifacts:
+#  files:
+#    - artifact/template.yml
+#    - artifact/template-configuration.json
+#  discard-paths: yes
+#  secondary-artifacts:
+#    artifact1:
+#      files:
+#        - target/artifact-1.0.jar
+#      discard-paths: yes
+#    artifact2:
+#      files:
+#        - target/artifact-2.0.jar
+#      discard-paths: yes
+cache:
+  paths:
+    - '/root/.m2/**/*'
+    - '/root/.sdkman/**/*'

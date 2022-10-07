@@ -1,0 +1,42 @@
+  AWSTemplateFormatVersion: '2010-09-09'
+  Transform: AWS::Serverless-2016-10-31
+  Description: AWS Serverless Quarkus HTTP - piggybank-1.0.0-SNAPSHOT
+  Globals:
+    Api:
+      EndpointConfiguration: REGIONAL
+      BinaryMediaTypes:
+        - "*/*"
+
+Parameters:
+# https://stackoverflow.com/questions/48104665/aws-sam-local-environment-variables
+    
+Resources:
+    
+#    Database:
+
+      
+    Piggybank:
+      Type: AWS::Serverless::Function
+      Properties:
+        Handler: io.quarkus.amazon.lambda.runtime.QuarkusStreamHandler::handleRequest
+        Runtime: java11
+        CodeUri: function.zip
+        MemorySize: 512
+        Policies: AWSLambdaBasicExecutionRole
+        Timeout: 15
+        Environment:
+            QUARKUS_DATASOURCE_DB_KIND: "mysql"
+            QUARKUS_DATASOURCE_JDBC_URL: "jdbc:mysql://127.0.0.1:3306/piggybankdb"
+            QUARKUS_DATASOURCE_USERNAME: "root"
+            QUARKUS_DATASOURCE_PASSWORD: "Masterkey123"
+            QUARKUS_HIBERNATE_ORM_DATABASE_GENERATION: "update"
+        Events:
+          HttpApiEvent:
+            Type: HttpApi
+
+  Outputs:
+    PiggybankApi:
+      Description: URL for application
+      Value: !Sub 'https://${ServerlessHttpApi}.execute-api.${AWS::Region}.amazonaws.com/'
+      Export:
+        Name: PiggybankApi
