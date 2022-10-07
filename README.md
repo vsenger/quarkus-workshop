@@ -1,25 +1,25 @@
 # Java Serverless Quarkus Workshop
 
-Hello Java Developers! Today we are going to build a modern, sustainable, low-code, 
+Hello Java Developers! Today we are going to build a modern, sustainable, low-code,
 elegant, cloud native, multi-platform and scalable application with AWS + Java + Quarkus.
 
-Quarkus is a Supersonic Subatomic Java Framework with some spices of 
+Quarkus is a Supersonic Subatomic Java Framework with some spices of
 old but gold Java and Java EE API's like JPA, Dependency Injection, Hibernate
 and amazing quarkus extensions to create RESTFul API's (not limited to!) with
-low coding development and easy to deploy for containers, Lambda or 
+low coding development and easy to deploy for containers, Lambda or
 even hosting yourself to remember the old times :).
 
 
-We are going to learn Quarkus by doing but if you want to learn 
+We are going to learn Quarkus by doing but if you want to learn
 more details about Quarkus, please visit its website: https://quarkus.io/.
 
 # Piggy Bank Project
 
 The proposal of Piggy Bank is to replace personal finances spreadsheet with a Java
-modern application that can be used as an architecture reference; 
-remember Petstore from J2EE??? Something like that but modern!
+modern application that can be used as an architecture reference;
+remember Petstore from J2EE??? Something like that but with modern Java!
 
-The application will be able to import data from a spreadsheet, and Today we 
+The application will be able to import data from a spreadsheet, and Today we
 are going to create the backend with RESTFul API to manage our financial data.
 
 The main entity of the application is the Entry, that represents a financial transaction
@@ -40,7 +40,7 @@ from a single banking account:
 In the end of this workshop you will have a complete backend application with RESTFul API
 to manage your personal finances and also a routine to calculate account balance.
 
-We are working on add-ons for this workshop that includes security, monitoring, 
+We are working on add-ons for this workshop that includes security, monitoring,
 CI/CD, and more!
 
 ## Architecture Diagram
@@ -289,8 +289,8 @@ curl -v http://localhost:8080/_hc
 ```
 
 *Where is that database?*
-[Quarkus Dev Services](https://quarkus.io/guides/datasource#dev-services) 
-will automatically start a MySQL database in a Docker container, 
+[Quarkus Dev Services](https://quarkus.io/guides/datasource#dev-services)
+will automatically start a MySQL database in a Docker container,
 and configure the application to use it in development mode.
 
 You can also check the network connection to the database:
@@ -464,7 +464,7 @@ public class Entry extends PanacheEntityBase {
 ```
 
 Now we are going to create a very simple resource / controller to test our project before doing
-some quarkus magic. 
+some quarkus magic.
 
 Add this code to `src/main/java/mjw/EntrySimpleController.java`
 
@@ -538,7 +538,7 @@ curl http://localhost:8080/entry/find?description=Test
 ## Task 4: Calculate Balance and some Quarkus RESTFul Magic
 
 Now we are going to create a very simple function to calculate te account balance.
-There are many ways to code it, we try to keep it simple usinmarafa07g a generated code 
+There are many ways to code it, we try to keep it simple usinmarafa07g a generated code
 from Amazon CodeWhisperer that help us to code with AI/ML:
 
 ```java
@@ -817,6 +817,9 @@ sam deploy
 
 
 ## Task 8: S3 Ingest Function
+Let's create a new function, this time to ingest batch data from a CSV file stored in S3 instead of the HTTP API.
+
+For this function, let's create the project using a maven archetype with Quarkus and Lambda support.
 ```bash
 mvn -B archetype:generate \
        -DarchetypeGroupId=io.quarkus \
@@ -828,17 +831,17 @@ mvn -B archetype:generate \
 cd piggybank-s3
 ```
 
-Add the Datasource extension:
+Add the Datasource extension and driver, just like the API module:
 ```bash
 quarkus ext add agroal jdbc-mysql
 ```
 
-Add the datasource configuration to `application.properties`:
-```properties
-
+Copy the application configuration to `application.properties`:
+```bash
+cp ../piggybank/src/main/resources/application.properties src/main/resources/application.properties
 ```
 
-Add the Amazon S3 to `pom.xml`
+Add the Amazon S3 client library to `pom.xml`
 ```xml
 <dependency>
     <groupId>software.amazon.awssdk</groupId>
@@ -847,7 +850,7 @@ Add the Amazon S3 to `pom.xml`
 </dependency>
 ```
 
-Create your lambda function code in `src/main/java/mjw/S3IngestFunction.java`:
+Create your lambda function code, in `src/main/java/mjw/S3IngestFunction.java`:
 ```java
 package mjw;
 
@@ -967,60 +970,81 @@ public class S3IngestFunction implements RequestHandler<S3Event, Void> {
 }
 ```
 
-Notice the S3 event in the SAM template `template.yaml`:
+Now, let's create the SAM `template.yaml` with the S3 event:
 ```yaml
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: AWS Serverless Quarkus HTTP - piggybank-1.0.0-SNAPSHOT
+Description: AWS Serverless Quarkus HTTP API
+
 Globals:
   Api:
     EndpointConfiguration: REGIONAL
     BinaryMediaTypes:
       - "*/*"
 
-Resources:
-  IngestBucket:
-    Type: AWS::S3::Bucket
+Parameters:
+  NetworkStackName:
+    Type: String
+    Default: "network-stack"
 
-  S3IngestFunction:
+Resources:
+  FunctionSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "Security Group for Database"
+      VpcId:
+        Fn::ImportValue:
+          !Sub "${NetworkStackName}-VPC"
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-FunctionSecurityGroup'
+
+  Piggybank:
     Type: AWS::Serverless::Function
     Properties:
       Handler: io.quarkus.amazon.lambda.runtime.QuarkusStreamHandler::handleRequest
       Runtime: java11
       CodeUri: target/function.zip
       MemorySize: 512
-      Policies:
-        - AWSLambdaBasicExecutionRole
-        - AmazonS3ReadOnlyAccess
+      Policies: AWSLambdaBasicExecutionRole
       Timeout: 15
       Events:
-        S3Event:
-          Type: S3
-          Properties:
-            Bucket: !Ref IngestBucket
-            Events:
-              - 's3:ObjectCreated:*'
+        HttpApiEvent:
+          Type: HttpApi
       VpcConfig:
         SecurityGroupIds:
-          - $SECGRP
+          - !Ref FunctionSecurityGroup
         SubnetIds:
-          - $SUBNET0
-          - $SUBNET1
-          - $SUBNET2
+          - Fn::ImportValue:
+              !Sub "${NetworkStackName}-PrivateSubnet0"
+          - Fn::ImportValue:
+              !Sub "${NetworkStackName}-PrivateSubnet1"
+          - Fn::ImportValue:
+              !Sub "${NetworkStackName}-PrivateSubnet2"
 
 Outputs:
-  IngestBucketURL:
-    Description: S3  ingest bucket
-    Value: !Ref IngestBucket
+  PiggybankApi:
+    Description: URL for application
+    Value:
+      Fn::Join:
+        - ''
+        - - 'https://'
+          - Ref: 'ServerlessHttpApi'
+          - '.execute-api.'
+          - Ref: 'AWS::Region'
+          - '.amazonaws.com/'
+    Export:
+      Name: PiggybankApi
 ```
 
 
 Deploy to AWS using the SAM CLI:
 ```bash
+mvn package
 sam deploy -g
 ```
 
-Get the name of the created bucket:
+Once the stack is deployed, get the name of the created bucket:
 ```bash
 export INGEST_BUCKET=$(aws cloudformation describe-stacks --stack-name  "piggybank-s3" --query "Stacks[0].Outputs[?OutputKey=='IngestBucketName'].OutputValue" --output text)
 echo "INGEST_BUCKET=$INGEST_BUCKET"
@@ -1034,17 +1058,79 @@ Create a sample CSV file:
 2022-01-04 19:00:00,13.00,donuts,Krispy
 ```
 
-Copy a sample entries CSV file to the S3 bucket:
+Copy the entries CSV file to the S3 bucket:
 ```bash
 aws s3 cp sample.csv s3://${INGEST_BUCKET}/${RANDOM}.csv
 ```
 
 Check the database to see if the entries were inserted, using the RDS [Query Editor](https://console.aws.amazon.com/rds/home#query-editor:)
 
+## Task 9: Continuous Delivery
+
+Now that we have a working application, let's set up a continuous delivery pipeline to automatically deploy changes to the application.
+
+Create your `buildspec.yml` in the repository root directory:
+```yaml
+version: 0.2
+
+env:
+  variables:
+    QUARKUS_PROFILE: "prod"
+    MVN_XOPTS: "-B -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
+
+phases:
+  install:
+    commands:
+      - echo Install SDK and tools
+      - curl -s "https://get.sdkman.io" | bash
+      - source "/root/.sdkman/bin/sdkman-init.sh" && sdk install java 11.0.16-amzn && sdk install maven
+      - npm install -g aws-cdk
+      - sam --version
+  build:
+    commands:
+      - echo Build the packages
+#      - mvn -f piggybank clean package -DskipTests
+  post_build:
+    commands:
+      - echo "post-build [$PWD]" && find .
+
+cache:
+  paths:
+    - '/root/.m2/**/*'
+    - '/root/.sdkman/**/*'
+```
+
+Next, let's create a CodeBuild project and its dependencies using a new cloudformation template. Review the [template](https://modern-java-workshop-v1.s3.us-west-2.amazonaws.com/codebuild.template.yaml)  and create the stack:
+```bash
+export GITHUB_URL="https://github.com/YOUR/REPOSITORY"
+echo GITHUB_URL=$GITHUB_URL
+
+aws cloudformation create-stack \
+  --stack-name "build-stack" \
+  --template-url 'https://modern-java-workshop-v1.s3.us-west-2.amazonaws.com/codebuild.template.yaml' \
+  --parameters "ParameterKey=GitHubURL,ParameterValue=$GITHUB_URL" \
+  --capabilities CAPABILITY_IAM
+```
+
+```bash
+export BUILD_PROJECT=$(aws cloudformation describe-stacks --stack-name  "build-stack" --query "Stacks[0].Outputs[?OutputKey=='CodeBuildProjectName'].OutputValue" --output text)
+echo "BUILD_PROJECT=$BUILD_PROJECT"
+
+export BUILD_ID=$(aws codebuild start-build --project-name $BUILD_PROJECT --query "build.id" --output text)
+echo "BUILD_ID=$BUILD_ID"
+
+LOGS_LINK=$(aws codebuild batch-get-builds --ids $BUILD_ID --query "builds[0].logs.deepLink" --output text)
+echo "LOGS_LINK=$LOGS_LINK"
+```
+
+Awesome! Now you can change your infrastructure, as code, and evolve your architecture :)
 
 # Optional AWS Tasks
 
 ## Observability
+
+### TODO lamdapowertools
+
 ## AI / ML
 ## CDK
 
