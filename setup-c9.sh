@@ -41,4 +41,4 @@ brew install aws-sam-cli
 # END TODO
 
 # Clone repo
-git clone https://github.com/vsenger/quarkus-workshop
+git clone https://github.com/CaravanaCloud/modern-java-workshop

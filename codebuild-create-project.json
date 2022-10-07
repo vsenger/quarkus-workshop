@@ -3,7 +3,7 @@
     "description": "Build the piggybank",
     "source": {
         "type": "GITHUB",
-        "location": "https://github.com/vsenger/quarkus-workshop.git"
+        "location": "https://github.com/CaravanaCloud/modern-java-workshop",
     },
     "environment": {
         "type": "LINUX_CONTAINER",

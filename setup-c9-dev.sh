@@ -7,4 +7,4 @@ eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
 brew install gh
 
 gh auth login
-gh repo clone vsenger/quarkus-workshop
+gh repo clone CaravanaCloud/modern-java-workshop

@@ -70,17 +70,24 @@ Let's first make sure all tools are ready to go.
 
 Please check that can log in to the AWS Management console at https://https://console.aws.amazon.com/
 
-### Development Environment
 
-Choose and access your development environment:
+If you don't have an AWS account yet, request one for workshop instructor or create one for free at [https://aws.amazon.com/free/](https://aws.amazon.com/free/).
 
-##### Cloud 9 Development Environment (default)
+#### Cloud 9 Development Environment (default)
 
-AWS Cloud9 is a development environment you can use directly from your AWS account. Log in to your Cloud9 environment or create a new one at https://us-west-2.console.aws.amazon.com/cloud9/home
+AWS Cloud9 is a development environment you can use directly from your AWS account.
 
-#TODO: Cloud9 setup and screenshot
+[Create a Cloud9 environment](https://us-west-2.console.aws.amazon.com/cloud9/home), you can use any name (e.g. "workshop-ide") and the default settings, except for the instance type. Please select the 'm5.large' instance type.
 
-Increase EBS volume size
+![Cloud9 settings and instance type](img/cloud9-instance-type.png)
+
+You will be redirected to the Cloud9 IDE, where you can start coding.
+Let's now setup the development environment. Execute the commands below using the terminal in the Cloud9 IDE.
+
+![Cloud9 Terminal](img/cloud9-terminal.png)
+
+
+First, let's modify the EBS volume size, as the default 10G is not sufficient.
 ```bash
 INSTANCE_ID=$(curl -s http://instance-data/latest/meta-data/instance-id)
 echo "$INSTANCE_ID"
@@ -89,13 +96,13 @@ VOLUME_ID=$(aws ec2 describe-instances --instance-ids=$INSTANCE_ID --query "Rese
 aws ec2 modify-volume --volume-id $VOLUME_ID --size 128
 ```
 
-Grow the partition and filesystem:
+After the volume is modified, grow the partition and filesystem:
 ```bash
 sudo growpart /dev/xvda 1
 sudo xfs_growfs -d /
 ```
 
-Install SDKMan:
+Install SDKMan, so we can install Java and other tools:
 ```bash
 curl -s "https://get.sdkman.io" | bash
 source "/home/ec2-user/.sdkman/bin/sdkman-init.sh"
@@ -165,7 +172,6 @@ To install AWS SAM CLI:
 wget https://github.com/aws/aws-sam-cli/releases/latest/download/aws-sam-cli-linux-x86_64.zip
 unzip aws-sam-cli-linux-x86_64.zip -d sam-installation
 sudo ./sam-installation/install --update
-
 ```
 
 ### Quarkus CLI
@@ -187,10 +193,7 @@ Quarkus References:
 
 In this workshop, Quarkus is used as a reference implementation. If you'd prefer, feel free to adapt and use any other framework, such as Spring Boot, Micronaut, JHipster or even plain Java.
 
-### Done!
-
-
-Awesome! You're ready to go!
+*Awesome! You're ready to go!*
 
 
 ## Task 1: Project Setup
