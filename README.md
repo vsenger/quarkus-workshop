@@ -533,8 +533,8 @@ quarkus dev
 And test it with curl (or your browser!)
 
 ```bash
-curl http://localhost:8080/entry/new?categoryID=drinks&description=Test&amount=100&date=2020-01-01
-curl http://localhost:8080/entry/new?categoryID=food&description=Test2&amount=200&date=2020-01-01
+curl "http://localhost:8080/entry/new?categoryID=drinks&description=Test&amount=100&date=2020-01-01"
+curl "http://localhost:8080/entry/new?categoryID=food&description=Test2&amount=200&date=2020-01-01"
 curl http://localhost:8080/entry/findAll
 curl http://localhost:8080/entry/find?description=Test
 ```
@@ -640,8 +640,8 @@ curl http://localhost:8080/_hc
 And test it with curl (or your browser!)
 
 ```bash
-curl http://localhost:8080/entry/new?categoryID=drinks&description=Test&amount=100&date=2020-01-01
-curl http://localhost:8080/entry/new?categoryID=food&description=Test2&amount=200&date=2020-01-01
+curl "http://localhost:8080/entry/new?categoryID=drinks&description=Test&amount=100&date=2020-01-01"
+curl "http://localhost:8080/entry/new?categoryID=food&description=Test2&amount=200&date=2020-01-01"
 curl http://localhost:8080/entry/findAll
 curl http://localhost:8080/entry/find?description=Test
 ```
