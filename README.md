@@ -114,6 +114,18 @@ sdk install maven
 sdk install quarkus
 ```
 
+Generate an SSH key and activate it
+```bash
+ssh-keygen -t rsa
+ssh-add id_rsa.pub
+```
+
+Add the generated SSH (public) key to your GitHub account settings
+```bash
+cat /home/ec2-user/.ssh/id_rsa.pub
+```
+Remember that you can choose the name of your key pair so make sure to use that name consistently in the above commands...
+
 ##### Local Development Environment *(optional)*
 
 You can also use your local computer if you prefer, just check that you have installed the required tools as mentioned below.
@@ -168,7 +180,7 @@ sam --version
 ```
 
 To install AWS SAM CLI:
-```bash 
+```bash
 wget https://github.com/aws/aws-sam-cli/releases/latest/download/aws-sam-cli-linux-x86_64.zip
 unzip aws-sam-cli-linux-x86_64.zip -d sam-installation
 sudo ./sam-installation/install --update
@@ -279,7 +291,7 @@ private static final int DB_CONN_TIMEOUT_SEC = 10;
             conn.isValid(DB_CONN_TIMEOUT_SEC);
         }catch(SQLException ex){
             throw new WebApplicationException("Could not connect to database", 500);
-        } 
+        }
         return "Application is healthy";
     }
 }
@@ -618,7 +630,7 @@ https://www.getpostman.com/collections/9eb82cd7abdbc8dedf73
 
 ## Task 5: Connecting to a Remote Database
 You can also connect to the remote database created for this workshop for testing purposes. However, be aware that this database is shared:
-```bash 
+```bash
 mysql -upiggyuser -p"AuraLabs321!" -hlabs-db.cwcl66gp21cx.us-west-2.rds.amazonaws.com piggybankdb
 ```
 
@@ -747,8 +759,8 @@ quarkus.datasource.password=Masterkey123
 Using the default `application.properties` like this is a simple way to configure your application, but we can also use profiles, environment variables and many other configuration sources supported by Quarkus.
 
 First, fetch the subnet and security group IDs from the database stack:
-```bash 
-export SUBNET0=$(aws cloudformation describe-stacks --stack-name "database-stack" --query "Stacks[0].Outputs[?OutputKey=='PrivateSubnet0'].OutputValue" --output text) 
+```bash
+export SUBNET0=$(aws cloudformation describe-stacks --stack-name "database-stack" --query "Stacks[0].Outputs[?OutputKey=='PrivateSubnet0'].OutputValue" --output text)
 
 export SUBNET1=$(aws cloudformation describe-stacks --stack-name  "database-stack" --query "Stacks[0].Outputs[?OutputKey=='PrivateSubnet1'].OutputValue" --output text)
 
@@ -830,7 +842,7 @@ mvn -B archetype:generate \
        -DarchetypeVersion=2.13.0.Final \
        -DgroupId=mjw \
        -DartifactId=piggybank-s3 \
-       -Dversion=1.0.0-SNAPSHOT 
+       -Dversion=1.0.0-SNAPSHOT
 cd piggybank-s3
 ```
 
