@@ -697,7 +697,8 @@ sam deploy -t target/sam.jvm.yaml -g
 ```
 You can proceed with default settings for all options, except for "Piggybank may not have authorization defined, Is this okay?", which must be explicitly answered "y".
 
-### TODO: Add Screenshot
+
+![Yay \o/](./img/sam-deploy.png)
 
 Check the [CloudFormation Console](https://console.aws.amazon.com/cloudformation/home) to observe the resources being provisioned.
 
