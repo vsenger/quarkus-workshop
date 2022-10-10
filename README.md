@@ -845,7 +845,7 @@ mvn -B archetype:generate \
        -DarchetypeVersion=2.13.0.Final \
        -DgroupId=mjw \
        -DartifactId=piggybank-s3 \
-       -Dversion=1.0.0-SNAPSHOT
+       -Dversion=1.0.0-SNAPSHOT 
 cd piggybank-s3
 ```
 
@@ -988,47 +988,62 @@ public class S3IngestFunction implements RequestHandler<S3Event, Void> {
 }
 ```
 
+Set that to be the function for this package on `application.properties`. The value of this property must match the `@Named` annotation value ("s3-ingest").
+```properties
+quarkus.lambda.handler=s3-ingest
+
+# ... database configuration
+```
+
 Now, let's create the SAM `template.yaml` with the S3 event:
 ```yaml
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: AWS Serverless Quarkus HTTP API
-
+Description: AWS Serverless Quarkus - S3 Ingest Function
 Globals:
   Api:
     EndpointConfiguration: REGIONAL
     BinaryMediaTypes:
       - "*/*"
-
 Parameters:
   NetworkStackName:
     Type: String
     Default: "network-stack"
 
 Resources:
+  IngestBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: "Retain"
+
   FunctionSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: "Security Group for Database"
+      GroupDescription: "Security Group for Function"
       VpcId:
         Fn::ImportValue:
           !Sub "${NetworkStackName}-VPC"
       Tags:
         - Key: Name
           Value: !Sub '${AWS::StackName}-FunctionSecurityGroup'
-
-  Piggybank:
+          
+  S3IngestFunction:
     Type: AWS::Serverless::Function
     Properties:
       Handler: io.quarkus.amazon.lambda.runtime.QuarkusStreamHandler::handleRequest
       Runtime: java11
       CodeUri: target/function.zip
       MemorySize: 512
-      Policies: AWSLambdaBasicExecutionRole
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - AmazonS3ReadOnlyAccess
       Timeout: 15
       Events:
-        HttpApiEvent:
-          Type: HttpApi
+        S3Event:
+          Type: S3
+          Properties:
+            Bucket: !Ref IngestBucket
+            Events:
+              - 's3:ObjectCreated:*'
       VpcConfig:
         SecurityGroupIds:
           - !Ref FunctionSecurityGroup
@@ -1041,20 +1056,10 @@ Resources:
               !Sub "${NetworkStackName}-PrivateSubnet2"
 
 Outputs:
-  PiggybankApi:
-    Description: URL for application
-    Value:
-      Fn::Join:
-        - ''
-        - - 'https://'
-          - Ref: 'ServerlessHttpApi'
-          - '.execute-api.'
-          - Ref: 'AWS::Region'
-          - '.amazonaws.com/'
-    Export:
-      Name: PiggybankApi
+  IngestBucketName:
+    Description: S3  ingest bucket
+    Value: !Ref IngestBucket
 ```
-
 
 Deploy to AWS using the SAM CLI:
 ```bash
@@ -1064,7 +1069,7 @@ sam deploy -g
 
 Once the stack is deployed, get the name of the created bucket:
 ```bash
-export INGEST_BUCKET=$(aws cloudformation describe-stacks --stack-name  "piggybank-s3" --query "Stacks[0].Outputs[?OutputKey=='IngestBucketName'].OutputValue" --output text)
+export INGEST_BUCKET=$(aws cloudformation describe-stacks --query "Stacks[0].Outputs[?OutputKey=='IngestBucketName'].OutputValue" --output text)
 echo "INGEST_BUCKET=$INGEST_BUCKET"
 ```
 
@@ -1083,9 +1088,11 @@ aws s3 cp sample.csv s3://${INGEST_BUCKET}/${RANDOM}.csv
 
 Check the database to see if the entries were inserted, using the RDS [Query Editor](https://console.aws.amazon.com/rds/home#query-editor:)
 
-## Task 9: Continuous Delivery
+## Task 5: Continuous Delivery
 
 Now that we have a working application, let's set up a continuous delivery pipeline to automatically deploy changes to the application.
+
+For this step, you'll need to [create your own github repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-new-repository) and push your code and configuration there. This will trigger our deployment to AWS using SAM, just as we did in the previous step.
 
 Create your `buildspec.yml` in the repository root directory:
 ```yaml
@@ -1107,10 +1114,12 @@ phases:
   build:
     commands:
       - echo Build the packages
-#      - mvn -f piggybank clean package -DskipTests
+      - mvn -f piggybank package -DskipTests
+      - mvn -f piggybank-s3 package -DskipTests
   post_build:
     commands:
-      - echo "post-build [$PWD]" && find .
+      - cd piggybank && sam deploy
+      - cd piggybank-s3 && sam deploy
 
 cache:
   paths:
@@ -1118,7 +1127,9 @@ cache:
     - '/root/.sdkman/**/*'
 ```
 
-Next, let's create a CodeBuild project and its dependencies using a new cloudformation template. Review the [template](https://modern-java-workshop-v1.s3.us-west-2.amazonaws.com/codebuild.template.yaml)  and create the stack:
+Commit and push your buildspec along with your code and configuration to your github repo.
+
+Next, let's create a CodeBuild project and its dependencies using a new cloudformation template. [Review the template](https://modern-java-workshop-v1.s3.us-west-2.amazonaws.com/codebuild.template.yaml)  and create the stack:
 ```bash
 export GITHUB_URL="https://github.com/YOUR/REPOSITORY"
 echo GITHUB_URL=$GITHUB_URL
@@ -1140,8 +1151,7 @@ echo "BUILD_ID=$BUILD_ID"
 LOGS_LINK=$(aws codebuild batch-get-builds --ids $BUILD_ID --query "builds[0].logs.deepLink" --output text)
 echo "LOGS_LINK=$LOGS_LINK"
 ```
-
-Awesome! Now you can change your infrastructure, as code, and evolve your architecture :)
+You can also follow the progress of your build in the [AWS CodeBuild Console](https://console.aws.amazon.com/codesuite/codebuild/projects).
 
 # Optional AWS Tasks
 
