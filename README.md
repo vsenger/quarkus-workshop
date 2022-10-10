@@ -19,6 +19,8 @@ The proposal of Piggy Bank is to replace personal finances spreadsheet with a Ja
 modern application that can be used as an architecture reference;
 remember Petstore from J2EE??? Something like that but with modern Java!
 
+![personal financial management spreadsheet](img/spreadsheet.png)
+
 The application will be able to import data from a spreadsheet, and Today we
 are going to create the backend with RESTFul API to manage our financial data.
 
@@ -698,7 +700,7 @@ sam deploy -t target/sam.jvm.yaml -g
 You can proceed with default settings for all options, except for "Piggybank may not have authorization defined, Is this okay?", which must be explicitly answered "y".
 
 
-![Yay \o/](./img/sam-deploy.png)
+![Sam deploy console](./img/sam-deploy.png)
 
 Check the [CloudFormation Console](https://console.aws.amazon.com/cloudformation/home) to observe the resources being provisioned.
 
