@@ -554,9 +554,8 @@ curl http://localhost:8080/entry/find?description=Test
 ```
 ## Task 4: Calculate Balance and some Quarkus RESTFul Magic
 
-Now we are going to create a very simple function to calculate te account balance.
-There are many ways to code it, we try to keep it simple usinmarafa07g a generated code
-from Amazon CodeWhisperer that help us to code with AI/ML:
+Now we are going to create a very simple function to calculate the account balance.
+There are many ways to code it, we try to keep it simple:
 
 ```java
 package mjw;
