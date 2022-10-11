@@ -235,7 +235,7 @@ On GitPod: Click the link or visit the port URL
 
 ![Yay \o/](./img/quarkus-congratulations.png)
 
-Also, test the [JAX-RS resource class](https://www.baeldung.com/jax-rs-spec-and-implementations) that was generated in `src/main/java/org/acme/piggybank/PiggybankResource.java`:
+Also, test the [JAX-RS resource class](https://www.baeldung.com/jax-rs-spec-and-implementations) that was generated in `src/main/java/mjw/GreetingResource.java`:
 
 ```bash
 curl -v http://localhost:8080/hello
