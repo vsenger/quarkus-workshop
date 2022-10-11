@@ -372,10 +372,6 @@ or we can go direct to our pom.xml and make sure that we have all dependencies a
     </dependency>
     <dependency>
         <groupId>io.quarkus</groupId>
-        <artifactId>quarkus-amazon-lambda-http</artifactId>
-    </dependency>
-    <dependency>
-        <groupId>io.quarkus</groupId>
         <artifactId>quarkus-junit5</artifactId>
         <scope>test</scope>
     </dependency>
