@@ -58,7 +58,7 @@ Now that we provided some context, let's get our hands dirty with the following 
 8. Some optional tasks: CI/CD and more..
 
 
-## Fork this repo!
+## Clone or Fork this repo!
 
 We recommend you fork this repository so that you can make changes to the code and commit them to your own repository.  This will allow you to easily track your progress and share your work with others.  You can fork this repository by clicking the "Fork" button in the upper right corner of this page.
 
