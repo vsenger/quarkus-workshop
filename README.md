@@ -1165,8 +1165,25 @@ You can also follow the progress of your build in the [AWS CodeBuild Console](ht
 
 ## Observability
 
+[Check this article about Serverless Observability with Lambda Powertools](https://medium.com/i-love-my-local-farmer-engineering-blog/serverless-observability-made-easy-with-lambda-powertools-for-java-metrics-logging-863bed8c6310)
+
 ## AI / ML
+
+There many AI / ML services you can agregate to this project:
+
+1. [Amazon Rekognition](https://docs.aws.amazon.com/sdk-for-java/latest/developer-guide/examples-rekognition.html):
+You may want to create a feature to upload a receipt and automatically upload date to your database 
+2. [Amazon CodeWhisperer](https://aws.amazon.com/codewhisperer/):
+You can try this service during the free preview that helps you to write Java code with AI/ML inferences like magic! 
 
 ## CDK
 
+The complete PiggyBank project has much more modules being developed and [here](https://github.com/vsenger/piggybank-dev-v2/tree/main/pbnk-cdk)
+you will find some AWS Cloud Development Kit code to replace Cloud Formation with Java code for infrastructure.
+
 # Final Considerations
+
+Now you have a reference modern and cloud native serverless application running on AWS
+and you can extend and modify this project for your needs.
+
+We hope you enjoyed this workshop!
