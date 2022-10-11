@@ -226,7 +226,7 @@ quarkus create app --java=11 --maven mjw:piggybank
 Start the application in development mode, using the [maven wrapper](https://www.baeldung.com/maven-wrapper):
 ```bash
 cd piggybank
-./mvnw quarkus:dev
+./mvn quarkus:dev
 ```
 Quarkus development mode will run in this terminal, in the foreground, accepting commands and restarting the application automatically as you change it.
 
@@ -247,7 +247,7 @@ curl -v http://localhost:8080/hello
 
 Generate an application package:
 ```bash
-./mvnw package
+./mvn package
 ```
 
 Check the generated package size and structure:
@@ -326,19 +326,6 @@ curl -v http://localhost:8080/_hc
 [Quarkus Dev Services](https://quarkus.io/guides/datasource#dev-services)
 will automatically start a MySQL database in a Docker container,
 and configure the application to use it in development mode.
-
-You can also check the network connection to the database:
-TODO random port
-
-```bash
-docker ps
-
-netstat -anp | grep :<random port>
-
-#database name user and password is quarkus:
-mysql --host <IP> --port <port> --user quarkus --password
-
-```
 
 ## Task 3: Creating Entry Entity and REST API
 
@@ -517,7 +504,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
-@Path("/entry")
+@Path("/entryResource")
 public class EntrySimpleController {
     @Inject
     EntityManager em;
@@ -564,10 +551,10 @@ quarkus dev
 And test it with curl (or your browser!)
 
 ```bash
-curl "http://localhost:8080/entry/new?categoryID=drinks&description=Test&amount=100&date=2020-01-01"
-curl "http://localhost:8080/entry/new?categoryID=food&description=Test2&amount=200&date=2020-01-01"
-curl http://localhost:8080/entry/findAll
-curl http://localhost:8080/entry/find?description=Test
+curl "http://localhost:8080/entryResource/new?categoryID=drinks&description=Test&amount=100&date=2020-01-01"
+curl "http://localhost:8080/entryResource/new?categoryID=food&description=Test2&amount=200&date=2020-01-01"
+curl http://localhost:8080/entryResource/findAll
+curl http://localhost:8080/entryResource/find?description=Test
 ```
 ## Task 4: Calculate Balance and some Quarkus RESTFul Magic
 
@@ -639,8 +626,8 @@ public interface EntryResource extends PanacheEntityResource<Entry, Long> {
 
 Now you can test calculate balance and our magic REST API:
 
-curl http://localhost:8080/entry/operations/calculateBalance
-curl http://localhost:8080/entry/findAll
+curl http://localhost:8080/operations/calculateBalance
+curl http://localhost:8080/entry
 
 And to test the API you can use POSTMan with this schema:
 
@@ -648,9 +635,11 @@ https://www.getpostman.com/collections/9eb82cd7abdbc8dedf73
 
 ## Task 5: Connecting to a Remote Database
 You can also connect to the remote database created for this workshop for testing purposes. However, be aware that this database is shared:
+
 ```bash
-mysql -upiggyuser -p"AuraLabs321!" -hlabs-db.cwcl66gp21cx.us-west-2.rds.amazonaws.com piggybankdb
+mysql -upiggyuser -p -hlabs-db.cwcl66gp21cx.us-west-2.rds.amazonaws.com piggybankdb
 ```
+The password is AuraLabs321!
 
 There are many ways you can [configure your application](https://quarkus.io/guides/config). Let's use the default properties file `src/main/resources/application.properties` to change and test the database connection:
 
@@ -670,10 +659,10 @@ curl http://localhost:8080/_hc
 And test it with curl (or your browser!)
 
 ```bash
-curl "http://localhost:8080/entry/new?categoryID=drinks&description=Test&amount=100&date=2020-01-01"
-curl "http://localhost:8080/entry/new?categoryID=food&description=Test2&amount=200&date=2020-01-01"
-curl http://localhost:8080/entry/findAll
-curl http://localhost:8080/entry/find?description=Test
+curl "http://localhost:8080/entryResource/new?categoryID=drinks&description=Test&amount=100&date=2020-01-01"
+curl "http://localhost:8080/entryResource/new?categoryID=food&description=Test2&amount=200&date=2020-01-01"
+curl http://localhost:8080/entryResource/findAll
+curl http://localhost:8080/entryResource/find?description=Test
 ```
 
 ## Task 6: Going Serverless with AWS Lambda
@@ -737,20 +726,31 @@ Check the [AWS Console](https://console.aws.amazon.com/lambda/home) for more inf
 
 So far, we've been using a local or shared database. Now, let's provision our own database in AWS, and connect our application to it.
 
-In this tutorial we'll use Amazon Aurora Serverless, a fully managed, auto-scaling relational database. It's a good choice for applications that have unpredictable workloads, and need to scale up and down to zero. Also, we'll create the database using the AWS CloudFormation template, so we can easily tear it down when we're done.
+In this tutorial we'll use Amazon Aurora Serverless, a fully managed, auto-scaling relational database. It's a good choice for applications that have unpredictable workloads, and need to scale up and down to zero.
 
-Take a few minutes to review the [database CloudFormation template](https://modern-java-workshop-v1.s3.us-west-2.amazonaws.com/database.template.yaml). Some points to observe:
+Also, we'll create the database using the AWS CloudFormation template, so we can easily tear it down when we're done.
+
+Before we create the database, let's create a network stack with a VPC and three private subnets for the database and other resources in this worshop.
+
+Take a few minutes to review the [network CloudFormation template](https://modern-java-workshop-v1.s3.us-west-2.amazonaws.com/network.template.yaml). Some points to observe:
 * What resources are created?
 * How are parameters passed?
 * How are outputs returned?
+
+Create the network stack:
+```bash
+aws cloudformation create-stack \
+  --stack-name "network-stack" \
+  --template-url 'https://modern-java-workshop-v1.s3.us-west-2.amazonaws.com/network.template.yaml' 
+```
+
+Take a few minutes to review the [database CloudFormation template](https://modern-java-workshop-v1.s3.us-west-2.amazonaws.com/database.template.yaml). Notice how the network stack resources are linked using [cross-stack references](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/walkthrough-crossstackref.html).
 
 After reviewing the template, create a stack from it using the AWS CLI:
 ```bash
 aws cloudformation create-stack \
   --stack-name "database-stack" \
-  --template-url 'https://modern-java-workshop-v1.s3.us-west-2.amazonaws.com/database.template.yaml' \
-  --query 'StackId' \
-  --output text
+  --template-url 'https://modern-java-workshop-v1.s3.us-west-2.amazonaws.com/database.template.yaml' 
 ```
 
 Wait until the stack status is CRATE_COMPLETE:
@@ -761,7 +761,7 @@ While you wait, it might be a good time to take a look into the [Using Amazon Au
 
 After the database stack is successfully created, let's configure the application to use it and move move the lambda function to the generated VPC, so that our lambda functions can access the database privately.
 
-To connect to the new database endpoint, let's fetch the address and re-generate the `application.properties` file, pointing to the new database endpoint.
+To connect to the new database endpoint, let's fetch the address and change the `application.properties` file, pointing to the new database endpoint.
 ```bash
 export DB_ENDPOINT=$(aws cloudformation describe-stacks --stack-name  "database-stack" --query "Stacks[0].Outputs[?OutputKey=='DbEndpoint'].OutputValue" --output text)
 echo "DB_ENDPOINT=$DB_ENDPOINT"
@@ -775,39 +775,39 @@ quarkus.datasource.username=root
 quarkus.datasource.password=Masterkey123
 ```
 
-Using the default `application.properties` like this is a simple way to configure your application, but we can also use profiles, environment variables and many other configuration sources supported by Quarkus.
+Using the default `application.properties` like this is a simple way to configure your application, but we can also use profiles, environment variables and many [other configuration sources](https://quarkus.io/guides/config) supported by Quarkus.
 
-First, fetch the subnet and security group IDs from the database stack:
-```bash
-export SUBNET0=$(aws cloudformation describe-stacks --stack-name "database-stack" --query "Stacks[0].Outputs[?OutputKey=='PrivateSubnet0'].OutputValue" --output text)
+Now let's change the function template to use the VPC created by the network stack.
+Create a SAM template file named `template.yaml`. Observe that it is essentially the same template, adding the network properties.
 
-export SUBNET1=$(aws cloudformation describe-stacks --stack-name  "database-stack" --query "Stacks[0].Outputs[?OutputKey=='PrivateSubnet1'].OutputValue" --output text)
-
-export SUBNET2=$(aws cloudformation describe-stacks --stack-name  "database-stack" --query "Stacks[0].Outputs[?OutputKey=='PrivateSubnet2'].OutputValue" --output text)
-
-export SECGRP=$(aws cloudformation describe-stacks --stack-name  "database-stack" --query "Stacks[0].Outputs[?OutputKey=='PiggybankRDSSecurityGroup'].OutputValue" --output text)
-
-echo "SUBNET0=$SUBNET0"
-echo "SUBNET1=$SUBNET1"
-echo "SUBNET2=$SUBNET2"
-echo "SECGRP=$SECGRP"
-```
-If you open another terminal session, remember to export the variables again.
-
-Review the `template.yaml`
-Now let's replace the placeholders in the template with the actual values using the [envsubst](https://www.baeldung.com/linux/envsubst-command) command. If needed, you can install `envsubst` by installing the `gettext` package. If by any reason that does not work, replacing the variables manually would work just as well.
-
-```bash
+```yaml
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: AWS Serverless Quarkus HTTP - piggybank-1.0.0-SNAPSHOT
+Description: AWS Serverless Quarkus HTTP 
+
 Globals:
   Api:
     EndpointConfiguration: REGIONAL
     BinaryMediaTypes:
       - "*/*"
 
+Parameters:
+  NetworkStackName:
+    Type: String
+    Default: "network-stack"
+
 Resources:
+  FunctionSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "Security Group for Function"
+      VpcId:
+        Fn::ImportValue:
+          !Sub "${NetworkStackName}-VPC"
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-FunctionSecurityGroup'
+
   Piggybank:
     Type: AWS::Serverless::Function
     Properties:
@@ -819,14 +819,17 @@ Resources:
       Timeout: 15
       Events:
         HttpApiEvent:
-            Type: HttpApi
+          Type: HttpApi
       VpcConfig:
-          SecurityGroupIds:
-              - $SECGRP
-          SubnetIds:
-              - $SUBNET0
-              - $SUBNET1
-              - $SUBNET2
+        SecurityGroupIds:
+          - !Ref FunctionSecurityGroup
+        SubnetIds:
+          - Fn::ImportValue:
+              !Sub "${NetworkStackName}-PrivateSubnet0"
+          - Fn::ImportValue:
+              !Sub "${NetworkStackName}-PrivateSubnet1"
+          - Fn::ImportValue:
+              !Sub "${NetworkStackName}-PrivateSubnet2"
 
 Outputs:
   PiggybankApi:
@@ -845,8 +848,22 @@ Outputs:
 
 Re-build and re-deploy the application:
 ```bash
-mvn -f piggybank package
-sam deploy
+cd piggybank
+mvn package
+sam deploy -g
+```
+You can omit the "-g" (guided) flag after the first deployment.
+
+You can use any stack name (e.g. "piggybank-api") and default settings. Mind that the question "Piggybank may not have authorization defined, Is this okay?" needs to be explicitly answered with "Y".
+
+Check that the application is working:
+```bash
+API_URL=$(aws cloudformation describe-stacks --query 'Stacks[0].Outputs[?OutputKey==`PiggybankApi`].OutputValue' --output text)
+echo API_URL=$API_URL
+
+curl "${API_URL}"
+curl "${API_URL}/hello"
+curl "${API_URL}/_hc"
 ```
 
 
