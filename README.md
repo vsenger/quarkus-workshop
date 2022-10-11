@@ -123,17 +123,11 @@ sdk install maven
 sdk install quarkus
 ```
 
-Generate an SSH key and activate it
-```bash
-ssh-keygen -t rsa
-ssh-add id_rsa.pub
-```
+## Clone github repository
 
-Add the generated SSH (public) key to your GitHub account settings
 ```bash
-cat /home/ec2-user/.ssh/id_rsa.pub
+git clone https://github.com/vsenger/quarkus-workshop
 ```
-Remember that you can choose the name of your key pair so make sure to use that name consistently in the above commands...
 
 ##### Local Development Environment *(optional)*
 
