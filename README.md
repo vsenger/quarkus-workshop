@@ -27,7 +27,6 @@ are going to create the backend with RESTFul API to manage our financial data.
 The main entity of the application is the Entry, that represents a financial transaction
 from a single banking account:
 
-### AirplaneTODO replace for entity diagram
 > Entry Properties
 > <ol>
 > <li>uuid - Long - entry ID</li>
@@ -45,19 +44,18 @@ to manage your personal finances and also a routine to calculate account balance
 We are working on add-ons for this workshop that includes security, monitoring,
 CI/CD, and more!
 
-## Architecture Diagram
-
-### AirplaneTODO: design the diagram and fix the final task list
+## Tasks Resume
 
 Now that we provided some context, let's get our hands dirty with the following steps:
 
 1. Setup your development environment
 2. Create a Quarkus project
 3. Run the application locally
-3. Create a RESTFul API
-4. Create a database
-5. Create a Lambda function
-6. ...
+4. Create a RESTFul API
+5. Pack and deploy your Quarkus App as AWS Lambda
+6. Create a serveless database
+7. Create a Lambda function to ingest a CSV file on S3 and upload data to database
+8. Some optional tasks: CI/CD and more..
 
 
 ## Fork this repo!
@@ -281,7 +279,8 @@ import javax.ws.rs.core.MediaType;
 
 @Path("/_hc")
 public class HealthCheckResource {
-private static final int DB_CONN_TIMEOUT_SEC = 10;
+    private static final int DB_CONN_TIMEOUT_SEC = 10;
+    private static final String createTableSQL = "CREATE TABLE IF NOT EXISTS entry (uuid int not null primary key auto_increment, timeStamp  date, createStamp  datetime, value decimal(10,2), balance decimal(10,2), category varchar(255), description varchar(255));";
 
     @Inject
     DataSource ds;
@@ -295,6 +294,17 @@ private static final int DB_CONN_TIMEOUT_SEC = 10;
             throw new WebApplicationException("Could not connect to database", 500);
         }
         return "Application is healthy";
+    }
+    @Path("createTable")
+    @GET
+    public String createTable() {
+        try (var conn = ds.getConnection();
+             var stmt = conn.createStatement()){
+            stmt.execute(createTableSQL);
+            return "Table created!";
+        }catch(SQLException e){
+            return "Error creating table: " + e.getMessage();
+        }
     }
 }
 ```
@@ -1086,8 +1096,9 @@ aws s3 cp sample.csv s3://${INGEST_BUCKET}/${RANDOM}.csv
 ```
 
 Check the database to see if the entries were inserted, using the RDS [Query Editor](https://console.aws.amazon.com/rds/home#query-editor:)
+# Optional Tasks
 
-## Task 5: Continuous Delivery
+## Continuous Delivery
 
 Now that we have a working application, let's set up a continuous delivery pipeline to automatically deploy changes to the application.
 
@@ -1152,13 +1163,10 @@ echo "LOGS_LINK=$LOGS_LINK"
 ```
 You can also follow the progress of your build in the [AWS CodeBuild Console](https://console.aws.amazon.com/codesuite/codebuild/projects).
 
-# Optional AWS Tasks
-
 ## Observability
 
-### TODO lamdapowertools
-
 ## AI / ML
+
 ## CDK
 
 # Final Considerations
