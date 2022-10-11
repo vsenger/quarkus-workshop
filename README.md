@@ -1,5 +1,7 @@
 # Java Serverless Quarkus Workshop
 
+## https://github.com/vsenger/quarkus-workshop
+
 Hello Java Developers! Today we are going to build a modern, sustainable, low-code,
 elegant, cloud native, multi-platform and scalable application with AWS + Java + Quarkus.
 
