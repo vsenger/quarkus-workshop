@@ -753,7 +753,7 @@ aws cloudformation create-stack \
   --template-url 'https://modern-java-workshop-v1.s3.us-west-2.amazonaws.com/database.template.yaml' 
 ```
 
-Wait until the stack status is CRATE_COMPLETE:
+Wait until the stack status is CREATE_COMPLETE:
 ```
 watch aws cloudformation describe-stacks --stack-name  "database-stack" --query 'Stacks[0].StackStatus'
 ```
@@ -768,7 +768,7 @@ echo "DB_ENDPOINT=$DB_ENDPOINT"
 ```
 
 ```properties
-db.endpoint=$DB_ENDPOINT
+db.endpoint=<COPY YOUR DB ENDPOINT>
 quarkus.datasource.db-kind=mysql
 quarkus.datasource.jdbc.url=jdbc:mysql://${db.endpoint}:3306/piggybankdb
 quarkus.datasource.username=root
@@ -777,7 +777,7 @@ quarkus.datasource.password=Masterkey123
 
 Using the default `application.properties` like this is a simple way to configure your application, but we can also use profiles, environment variables and many [other configuration sources](https://quarkus.io/guides/config) supported by Quarkus.
 
-Now let's change the function template to use the VPC created by the network stack.
+Now let's change the PiggyBank function template to use the VPC created by the network stack.
 Create a SAM template file named `template.yaml`. Observe that it is essentially the same template, adding the network properties.
 
 ```yaml
@@ -846,10 +846,11 @@ Outputs:
       Name: PiggybankApi
 ```
 
-Re-build and re-deploy the application:
+Delete your old PiggyBank CloudFormation stack using the AWS console and re-build and re-deploy the application (we are skipping tests since the DB will not be reachable outside VPC) :
+
 ```bash
 cd piggybank
-mvn package
+mvn package -DskipTests
 sam deploy -g
 ```
 You can omit the "-g" (guided) flag after the first deployment.
@@ -864,8 +865,14 @@ echo API_URL=$API_URL
 curl "${API_URL}"
 curl "${API_URL}/hello"
 curl "${API_URL}/_hc"
-```
+# We are using the _hc/createTable to create our entry table in our new database!
+curl "${API_URL}/_hc/createTable"
+curl "${API_URL}/entryResource/new?categoryID=drinks&description=Test&amount=100&date=2020-01-01"
+curl "${API_URL}/entryResource/new?categoryID=food&description=Test2&amount=200&date=2020-01-01"
+curl ${API_URL}/entryResource/findAll
+curl ${API_URL}/entryResource/find?description=Test
 
+```
 
 ## Task 8: S3 Ingest Function
 Let's create a new function, this time to ingest batch 
@@ -875,6 +882,9 @@ We are going to upload the data to another table named Entries instead of adding
 entry table so you can create the logic to synchronize the data after uploading. 
 
 For this function, let's create the project using a maven archetype with Quarkus and Lambda support.
+
+Make sure you are not in the piggybank api directory!
+
 ```bash
 mvn -B archetype:generate \
        -DarchetypeGroupId=io.quarkus \
@@ -1125,6 +1135,12 @@ aws s3 cp sample.csv s3://${INGEST_BUCKET}/${RANDOM}.csv
 
 Check the database to see if the entries were inserted, using the RDS [Query Editor](https://console.aws.amazon.com/rds/home#query-editor:)
 
+Connect using user root password Masterkey123 and piggybankdb:
+
+![RDS Query Editor Console](./img/rds-queryeditor.png)
+
+All GOOD!!!! Now you can open a beer and celebrate! (or not! :)
+
 # Optional Tasks
 
 ## Continuous Delivery
@@ -1215,4 +1231,6 @@ you will find some AWS Cloud Development Kit code to replace Cloud Formation wit
 Now you have a reference modern and cloud native serverless application running on AWS
 and you can extend and modify this project for your needs.
 
-We hope you enjoyed this workshop!
+We are keep working in this project so stay tuned and hope you enjoyed this workshop!
+
+ps. Please complete the survey to help us to improve.
