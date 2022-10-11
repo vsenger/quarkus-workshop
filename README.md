@@ -283,7 +283,7 @@ import javax.ws.rs.core.MediaType;
 @Path("/_hc")
 public class HealthCheckResource {
     private static final int DB_CONN_TIMEOUT_SEC = 10;
-    private static final String createTableSQL = "CREATE TABLE IF NOT EXISTS entry (uuid int not null primary key auto_increment, timeStamp  date, createStamp  datetime, value decimal(10,2), balance decimal(10,2), category varchar(255), description varchar(255));";
+    private static final String createTableSQL = "CREATE TABLE IF NOT EXISTS entry (uuid bigint not null primary key auto_increment, timeStamp  date, createStamp  datetime, value decimal(10,2), balance decimal(10,2), category varchar(255), description varchar(255));";
 
     @Inject
     DataSource ds;
