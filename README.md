@@ -68,16 +68,23 @@ Let's first make sure all tools are ready to go.
 
 ### AWS Account
 
-Please check that can log in to the AWS Management console at https://https://console.aws.amazon.com/
+Get your FREE AWS account for this workshop using the hash: 9549-1496715794-12
 
+https://dashboard.eventengine.run/dashboard
 
-If you don't have an AWS account yet, request one for workshop instructor or create one for free at [https://aws.amazon.com/free/](https://aws.amazon.com/free/).
+Log using your email / OTP, click AWS Console to access your credentials:
+
+![AWS Account info](img/event.png)
+
+Please check that can log in to the AWS Management console at https://console.aws.amazon.com/
+
+You can also request free account at [https://aws.amazon.com/free/](https://aws.amazon.com/free/).
 
 #### Cloud 9 Development Environment (default)
 
 AWS Cloud9 is a development environment you can use directly from your AWS account.
 
-[Create a Cloud9 environment](https://us-west-2.console.aws.amazon.com/cloud9/home), you can use any name (e.g. "workshop-ide") and the default settings, except for the instance type. Please select the 'm5.large' instance type.
+[Create a Cloud9 environment](https://eu-central-1.console.aws.amazon.com/cloud9/home), you can use any name (e.g. "workshop-ide") and the default settings, except for the instance type. Please select the 'm5.large' instance type.
 
 ![Cloud9 settings and instance type](img/cloud9-instance-type.png)
 
