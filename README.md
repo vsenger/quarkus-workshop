@@ -844,7 +844,11 @@ sam deploy
 
 
 ## Task 8: S3 Ingest Function
-Let's create a new function, this time to ingest batch data from a CSV file stored in S3 instead of the HTTP API.
+Let's create a new function, this time to ingest batch 
+data from a CSV file stored in S3 instead of the HTTP API.
+
+We are going to upload the data to another table named Entries instead of adding to our 
+entry table so you can create the logic to synchronize the data after uploading. 
 
 For this function, let's create the project using a maven archetype with Quarkus and Lambda support.
 ```bash
@@ -1096,6 +1100,7 @@ aws s3 cp sample.csv s3://${INGEST_BUCKET}/${RANDOM}.csv
 ```
 
 Check the database to see if the entries were inserted, using the RDS [Query Editor](https://console.aws.amazon.com/rds/home#query-editor:)
+
 # Optional Tasks
 
 ## Continuous Delivery
