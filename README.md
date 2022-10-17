@@ -1226,3 +1226,5 @@ and you can extend and modify this project for your needs.
 We are keep working in this project so stay tuned and hope you enjoyed this workshop!
 
 ps. Please complete the survey to help us to improve.
+
+Price calculation
